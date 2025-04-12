@@ -1,37 +1,45 @@
 <?php
-// Conexión a la base de datos (ajusta según tus datos de conexión)
+// Configura los datos de conexión
 $host = 'localhost';
-$dbname = 'nombre_bd';
-$username = 'usuario';
-$password = 'contraseña';
+$dbname = 'asistencia_qr';
+$username = 'root';
+$password = ''; // Cambia esto si tu contraseña es distinta
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Establecer conexión
+$conn = new mysqli($host, $username, $password, $dbname);
 
-    // Obtén los datos recibidos
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (isset($data['nombre'], $data['email'], $data['telefono'], $data['puesto'])) {
-        // Inserción en la base de datos
-        $query = "INSERT INTO usuarios (nombre, email, telefono, puesto) VALUES (:nombre, :email, :telefono, :puesto)";
-        $stmt = $pdo->prepare($query);
-
-        $stmt->bindParam(':nombre', $data['nombre']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':telefono', $data['telefono']);
-        $stmt->bindParam(':puesto', $data['puesto']);
-
-        $stmt->execute();
-
-        // Devolver el ID del usuario registrado
-        $id = $pdo->lastInsertId();
-        echo json_encode(['success' => true, 'id' => $id]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
-    }
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+// Verificar conexión
+if ($conn->connect_error) {
+    die('Conexión fallida: ' . $conn->connect_error);
 }
+
+// Obtener los datos del POST
+$nombre = $_POST['nombre'] ?? '';
+$correo = $_POST['correo'] ?? '';
+$telefono = $_POST['telefono'] ?? '';
+$puesto = $_POST['puesto'] ?? '';
+$empresa = $_POST['empresa'] ?? '';
+$id = $_POST['id'] ?? '';
+
+// Validar campos (simple)
+if (empty($nombre) || empty($correo) || empty($telefono) || empty($puesto) || empty($empresa) || empty($id)) {
+    echo 'Todos los campos son obligatorios.';
+    exit;
+}
+
+// Preparar la consulta
+$stmt = $conn->prepare("INSERT INTO registros (id, nombre, correo, telefono, puesto, empresa) VALUES (?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("ssssss", $id, $nombre, $correo, $telefono, $puesto, $empresa);
+
+// Ejecutar y responder
+if ($stmt->execute()) {
+    echo 'Registro exitoso';
+} else {
+    echo 'Error al guardar: ' . $stmt->error;
+}
+
+$stmt->close();
+$conn->close();
 ?>
+
 

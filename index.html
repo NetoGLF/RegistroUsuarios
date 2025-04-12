@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ProCel Asistencia</title>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <script>
     let vistaActual = 'registro';
@@ -17,50 +18,49 @@
       renderVista();
     }
 
-    function registrarUsuario() {
-      const nombre = document.getElementById('nombre').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const telefono = document.getElementById('Telefono').value.trim();  // Corregido
-      const puesto = document.getElementById('Puesto').value.trim();      // Corregido
+    function generarID() {
+      return 'id-' + Math.random().toString(36).substr(2, 9);
+    }
 
-      const datos = { nombre, email, puesto, telefono };
+    function registrarUsuario(e) {
+      e.preventDefault();
+
+      const nombre = document.getElementById('nombre').value.trim();
+      const correo = document.getElementById('correo').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const puesto = document.getElementById('puesto').value.trim();
+      const empresa = "ProCel";
+      const id = generarID();
 
       const errores = {};
-
       if (!nombre) errores.nombre = 'El nombre es obligatorio';
-      if (!telefono) errores.telefono = 'El telefono es obligatorio';  // Corregido
-      if (!puesto) errores.puesto = 'El puesto es obligatorio';        // Corregido
-      if (!email || !email.includes('@')) errores.email = 'Correo inválido';
+      if (!correo || !correo.includes('@')) errores.correo = 'Correo inválido';
+      if (!telefono) errores.telefono = 'El teléfono es obligatorio';
+      if (!puesto) errores.puesto = 'El puesto es obligatorio';
 
       document.getElementById('error-nombre').innerText = errores.nombre || '';
-      document.getElementById('error-email').innerText = errores.email || '';
-      document.getElementById('error-puesto').innerText = errores.puesto || ''; // Corregido
-      document.getElementById('error-telefono').innerText = errores.telefono || ''; // Corregido
+      document.getElementById('error-correo').innerText = errores.correo || '';
+      document.getElementById('error-telefono').innerText = errores.telefono || '';
+      document.getElementById('error-puesto').innerText = errores.puesto || '';
+
+      if (Object.keys(errores).length > 0) return;
 
       fetch('guardar_registro.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert("Registro exitoso. ID: " + data.id);
-            generarCodigoQR(data.id); // Aquí puedes mostrar el QR
-        } else {
-            alert("Error al registrar: " + data.error);
-        }
-    });
-
-      if (Object.keys(errores).length === 0) {
-        const id = 'USR-' + Date.now();
-        usuarios.push({ id, nombre, email, telefono, puesto });
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `nombre=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(correo)}&puesto=${encodeURIComponent(puesto)}&telefono=${encodeURIComponent(telefono)}&empresa=${empresa}&id=${id}`
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data);
+        usuarios.push({ id, nombre, email: correo, telefono, puesto });
         usuarioActualId = id;
         cambiarVista('pase');
-      }
-
-
-
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Ocurrió un error al registrar.');
+      });
     }
 
     function generarDatosQR(id) {
@@ -88,7 +88,6 @@
         el.style.display = el.dataset.vista === vistaActual ? 'block' : 'none';
       });
 
-      // Render QR en la vista 'pase'
       if (vistaActual === 'pase' && usuarioActualId) {
         const datos = generarDatosQR(usuarioActualId);
         mostrarCodigoQR(datos);
@@ -100,17 +99,16 @@
         document.getElementById('info-id').innerText = usuarioActualId;
       }
 
-      // Render datos escaneados
       if (vistaActual === 'escanear' && datosEscaneados) {
         document.getElementById('datosEscaneados').innerText = datosEscaneados;
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('registroForm').addEventListener('submit', registrarUsuario);
       renderVista();
     });
   </script>
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-yellow-50 py-12 px-4">
   <div class="max-w-md mx-auto">
@@ -126,7 +124,7 @@
 
       <div class="bg-white p-6">
         <!-- Registro -->
-        <div data-vista="registro" class="space-y-4">
+        <form id="registroForm" data-vista="registro" class="space-y-4">
           <div>
             <label for="nombre" class="text-gray-800 block">Nombre Completo</label>
             <input id="nombre" class="w-full border border-gray-300 rounded px-3 py-2" />
@@ -134,25 +132,25 @@
           </div>
 
           <div>
-            <label for="email" class="text-gray-800 block">Correo Electrónico</label>
-            <input id="email" type="email" class="w-full border border-gray-300 rounded px-3 py-2" />
-            <p id="error-email" class="text-red-500 text-sm mt-1"></p>
+            <label for="correo" class="text-gray-800 block">Correo Electrónico</label>
+            <input id="correo" type="email" class="w-full border border-gray-300 rounded px-3 py-2" />
+            <p id="error-correo" class="text-red-500 text-sm mt-1"></p>
           </div>
-    
+
           <div>
-            <label for="Telefono" class="text-gray-800 block">Telefono</label>
-            <input id="Telefono" class="w-full border border-gray-300 rounded px-3 py-2" />
+            <label for="telefono" class="text-gray-800 block">Teléfono</label>
+            <input id="telefono" class="w-full border border-gray-300 rounded px-3 py-2" />
             <p id="error-telefono" class="text-red-500 text-sm mt-1"></p>
           </div>
 
           <div>
-            <label for="Puesto" class="text-gray-800 block">Nombre del Puesto</label>
-            <input id="Puesto" class="w-full border border-gray-300 rounded px-3 py-2" />
-            <p id="error-puesto" class="text-red-500 text-sm mt-1"></p>  <!-- Corregido -->
+            <label for="puesto" class="text-gray-800 block">Nombre del Puesto</label>
+            <input id="puesto" class="w-full border border-gray-300 rounded px-3 py-2" />
+            <p id="error-puesto" class="text-red-500 text-sm mt-1"></p>
           </div>
 
-          <button onclick="registrarUsuario()" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded">Registrar</button>
-        </div>
+          <button type="submit" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded">Registrar</button>
+        </form>
 
         <!-- Pase -->
         <div data-vista="pase" class="space-y-6" style="display: none;">
@@ -160,26 +158,11 @@
 
           <div class="space-y-2 text-gray-800">
             <p class="font-medium">Información del Pase:</p>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Nombre:</span>
-              <span id="info-nombre"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Email:</span>
-              <span id="info-email"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Telefono:</span>
-              <span id="info-telefono"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">Puesto:</span>
-              <span id="info-puesto"></span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-gray-600">ID del Pase:</span>
-              <span class="font-mono" id="info-id"></span>
-            </div>
+            <div class="flex justify-between"><span>Nombre:</span><span id="info-nombre"></span></div>
+            <div class="flex justify-between"><span>Email:</span><span id="info-email"></span></div>
+            <div class="flex justify-between"><span>Teléfono:</span><span id="info-telefono"></span></div>
+            <div class="flex justify-between"><span>Puesto:</span><span id="info-puesto"></span></div>
+            <div class="flex justify-between"><span>ID del Pase:</span><span class="font-mono" id="info-id"></span></div>
           </div>
 
           <div class="flex space-x-2">
@@ -211,12 +194,13 @@
       </div>
 
       <div class="flex justify-between bg-gray-100 p-4 rounded-b-lg">
-        <button onclick="cambiarVista('registro')" class="text-gray-700" id="btn-registro">Registro</button>
-        <button onclick="usuarioActualId && cambiarVista('pase')" class="text-gray-700" id="btn-pase">Mi Pase</button>
-        <button onclick="simularEscanear()" class="text-gray-700" id="btn-escanear">Escanear</button>
+        <button onclick="cambiarVista('registro')" class="text-gray-700">Registro</button>
+        <button onclick="usuarioActualId && cambiarVista('pase')" class="text-gray-700">Mi Pase</button>
+        <button onclick="simularEscanear()" class="text-gray-700">Escanear</button>
       </div>
     </div>
   </div>
 </body>
 </html>
+
 
