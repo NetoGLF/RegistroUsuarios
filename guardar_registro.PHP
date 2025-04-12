@@ -1,7 +1,7 @@
 <?php
 // Configura los datos de conexión
 $host = 'localhost';
-$dbname = 'asistencia_qr';
+$dbname = 'procel_asistencia';
 $username = 'root';
 $password = ''; // Cambia esto si tu contraseña es distinta
 
