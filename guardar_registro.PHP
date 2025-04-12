@@ -28,7 +28,7 @@ if (empty($nombre) || empty($correo) || empty($telefono) || empty($puesto) || em
 }
 
 // Preparar la consulta
-$stmt = $conn->prepare("INSERT INTO empleados (id, nombre, correo, telefono, puesto, empresa) VALUES (?, ?, ?, ?, ?, ?)");
+$stmt = $conn->prepare("INSERT INTO registros (id, nombre, correo, telefono, puesto, empresa) VALUES (?, ?, ?, ?, ?, ?)");
 $stmt->bind_param("ssssss", $id, $nombre, $correo, $telefono, $puesto, $empresa);
 
 // Ejecutar y responder
